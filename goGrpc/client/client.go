@@ -28,9 +28,8 @@ func main() {
 	conn, err := grpc.Dial(serverID, grpc.WithInsecure())
 
 	if err != nil {
-		log.Fatalf("Faile to conncet to gRPC server :: %v", err)
+		log.Fatalf("Failed to connect to gRPC server :: %v", err)
 	}
-	defer conn.Close()
 
 	//Create a stream with ChatService
 	client := chatserver.NewServicesClient(conn)
@@ -42,13 +41,14 @@ func main() {
 
 	//Establish communication with gRPC Server
 	ch := clienthandle{stream: stream}
+	bl := make(chan bool)
 	ch.clientConfig()
-	go ch.sendMessage()
+	go ch.sendMessage(bl)
 	go ch.receiveMessage()
 
-	bl := make(chan bool)
 	<-bl
 
+	defer conn.Close() //closes the connection once everything has returned
 }
 
 type clienthandle struct {
@@ -65,10 +65,17 @@ func (ch *clienthandle) clientConfig() {
 		log.Fatalf(" Failed to read from console :: %v", err)
 	}
 	ch.clientName = strings.Trim(name, "\r\n")
+	//User joined Messsage
+	clientMessageBox := &chatserver.FromClient{
+		Name: ch.clientName,
+		Body: "joined Chitty-Chat at Lamport time L",
+	}
+	err = ch.stream.Send(clientMessageBox)
 
 }
 
-func (ch *clienthandle) sendMessage() {
+// aright what is this stuff
+func (ch *clienthandle) sendMessage(bl chan bool) {
 	for {
 
 		reader := bufio.NewReader(os.Stdin)
@@ -77,18 +84,29 @@ func (ch *clienthandle) sendMessage() {
 			log.Fatalf(" Failed to read from console :: %v", err)
 		}
 		clientMessage = strings.Trim(clientMessage, "\r\n")
+		if clientMessage == "/leave" {
+			//User Left Message
+			clientMessageBox := &chatserver.FromClient{
+				Name: ch.clientName,
+				Body: "left Chitty-Chat at Lamport time L",
+			}
+			err = ch.stream.Send(clientMessageBox)
+			bl <- false
+		} else if len(clientMessage) > 128 {
+			fmt.Printf("Message is above the allowed 128 characters\n")
+		} else {
 
-		clientMessageBox := &chatserver.FromClient{
-			Name: ch.clientName,
-			Body: clientMessage,
+			clientMessageBox := &chatserver.FromClient{
+				Name: ch.clientName,
+				Body: clientMessage,
+			}
+
+			err = ch.stream.Send(clientMessageBox)
+
+			if err != nil {
+				log.Printf("Error while sending message to server :: %v", err)
+			}
 		}
-
-		err = ch.stream.Send(clientMessageBox)
-
-		if err != nil {
-			log.Printf("Error while sending message to server :: %v", err)
-		}
-
 	}
 
 }
