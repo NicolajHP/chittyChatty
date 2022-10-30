@@ -10,6 +10,7 @@ import (
 type messageUnit struct {
 	ClientName        string
 	MessageBody       string
+	lambdaTS          int
 	MessageUniqueCode int
 	ClientUniqueCode  int
 }
@@ -52,6 +53,7 @@ func receiveFromStream(csi_ Services_ChatServiceServer, clientUniqueCode_ int, e
 			messageHandleObject.MQue = append(messageHandleObject.MQue, messageUnit{
 				ClientName:        mssg.Name,
 				MessageBody:       mssg.Body,
+				lambdaTS:          int(mssg.Timestamp),
 				MessageUniqueCode: rand.Intn(1e8),
 				ClientUniqueCode:  clientUniqueCode_,
 			})
@@ -80,11 +82,12 @@ func sendToStream(csi_ Services_ChatServiceServer, clientUniqueCode_ int, errch_
 			senderUniqueCode := messageHandleObject.MQue[0].ClientUniqueCode
 			senderName4Client := messageHandleObject.MQue[0].ClientName
 			message4Client := messageHandleObject.MQue[0].MessageBody
+			timestamp4Client := messageHandleObject.MQue[0].lambdaTS
 
 			messageHandleObject.mu.Unlock()
 
 			if senderUniqueCode != clientUniqueCode_ {
-				err := csi_.Send(&FromServer{Name: senderName4Client, Body: message4Client})
+				err := csi_.Send(&FromServer{Name: senderName4Client, Body: message4Client, Timestamp: int32(timestamp4Client)})
 
 				if err != nil {
 					errch_ <- err

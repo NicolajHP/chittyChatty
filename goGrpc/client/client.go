@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	//Create a variable and then use the same variable in every gorutine?
+
 	fmt.Println("Enter Server IP:Port ::: ")
 	reader := bufio.NewReader(os.Stdin)
 	serverID, err := reader.ReadString('\n')
@@ -41,6 +43,7 @@ func main() {
 
 	//Establish communication with gRPC Server
 	ch := clienthandle{stream: stream}
+	// Create channel to send Lamport timestamp between different gorutines.
 	bl := make(chan bool)
 	ch.clientConfig()
 	go ch.sendMessage(bl)
@@ -51,6 +54,7 @@ func main() {
 	defer conn.Close() //closes the connection once everything has returned
 }
 
+// Maybe save Lamport timestamp inside clienthandle since it is already used by all gorutines?
 type clienthandle struct {
 	stream     chatserver.Services_ChatServiceClient
 	clientName string
