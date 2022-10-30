@@ -7,8 +7,8 @@ Every client has to be deployed as a separate process - check
 Log all service calls (Publish, Broadcast, ...) using the log package - check 
 
 Demonstrate that the system can be started with at least 3 client nodes 
-Demonstrate that a client node can join the system
-Demonstrate that a client node can leave the system
+Demonstrate that a client node can join the system - check
+Demonstrate that a client node can leave the system - check
 
 Optional: All elements of the Chitty-Chat service are deployed as Docker containers - check
 
@@ -24,7 +24,7 @@ R2: Clients in Chitty-Chat can Publish a valid chat message at any time they wis
 
 R3: The Chitty-Chat service has to broadcast every published message, together with the current Lamport timestamp, to all participants in the system, by using gRPC. It is an implementation decision left to the students, whether a Vector Clock or a Lamport timestamp is sent.
 R4: When a client receives a broadcasted message, it has to write the message and the current Lamport timestamp to the log
-R5: Chat clients can join at any time. 
+R5: Chat clients can join at any time. - check
 R6: A "Participant X  joined Chitty-Chat at Lamport time L" message is broadcast to all Participants when client X joins, including the new Participant.
-R7: Chat clients can drop out at any time. 
+R7: Chat clients can drop out at any time. - check
 R8: A "Participant X left Chitty-Chat at Lamport time L" message is broadcast to all remaining Participants when Participant X leaves.

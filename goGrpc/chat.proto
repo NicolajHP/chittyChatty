@@ -7,11 +7,13 @@ option go_package = "./chatserver";
 message FromClient{
     string name = 1;
     string body = 2;
+    int32 timestamp = 3;
 }
 
 message FromServer{
     string name = 1;
     string body = 2;
+    int32 timestamp = 3;
 }
 
 service Services {
