@@ -48,12 +48,12 @@ func MaxInt(a int32, b int32) int32 {
 
 func Publish(message string) {
 	if len(message) > 128 {
-		log.Print("The message must not be above 128 characters!")
+		log.Print("Message is above the allowed 128 characters\n")
 		return
 	}
 
 	if len(message) == 0 {
-		log.Print("The message cannot be empty!")
+		log.Print("Message is empty")
 		return
 	}
 
