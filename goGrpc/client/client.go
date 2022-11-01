@@ -30,16 +30,17 @@ func Join(quit chan bool) {
 
 		if <-quit {
 			break
+		} else {
+
+			atomic.StoreInt32(&lamport, MaxInt(lamport, response.Lamport)+1)
+
+			if response.User == "" {
+				log.Default().Printf("(%s) >> %s", strconv.Itoa(int(lamport)), response.Content)
+				continue
+			}
+
+			log.Default().Printf("(%s, %s) >> %s", strconv.Itoa(int(lamport)), response.User, response.Content)
 		}
-
-		atomic.StoreInt32(&lamport, MaxInt(lamport, response.Lamport)+1)
-
-		if response.User == "" {
-			log.Default().Printf("(%s) >> %s", strconv.Itoa(int(lamport)), response.Content)
-			continue
-		}
-
-		log.Default().Printf("(%s, %s) >> %s", strconv.Itoa(int(lamport)), response.User, response.Content)
 	}
 }
 
@@ -87,8 +88,6 @@ func main() {
 		return
 	}
 
-	defer conn.Close()
-
 	client = chatserver.NewServicesClient(conn)
 	context_ = context.Background()
 
@@ -98,4 +97,6 @@ func main() {
 	for scanner.Scan() {
 		go Publish(scanner.Text(), quit)
 	}
+
+	defer conn.Close()
 }
