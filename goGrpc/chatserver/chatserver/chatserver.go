@@ -50,6 +50,12 @@ func receiveFromStream(csi_ Services_ChatServiceServer, clientUniqueCode_ int, e
 		} else {
 			messageHandleObject.mu.Lock()
 
+			/*Messages are appended to the MQue and therefore send them in order to the client.
+			This might be fixed by having all connecting client in a slice and sending the message to
+			everything in the slice and therefore bypassing the need to append to the MQue*/
+
+			//clients := make([]Services_ChatServiceClient, 3)
+
 			messageHandleObject.MQue = append(messageHandleObject.MQue, messageUnit{
 				ClientName:        mssg.Name,
 				MessageBody:       mssg.Body,

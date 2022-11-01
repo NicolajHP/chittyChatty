@@ -58,10 +58,12 @@ func main() {
 type clienthandle struct {
 	stream     chatserver.Services_ChatServiceClient
 	clientName string
+	lambdaTS   int32
 }
 
 func (ch *clienthandle) clientConfig() {
 
+	ch.lambdaTS = 1
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("Your Name : ")
 	name, err := reader.ReadString('\n')
@@ -69,10 +71,11 @@ func (ch *clienthandle) clientConfig() {
 		log.Fatalf(" Failed to read from console :: %v", err)
 	}
 	ch.clientName = strings.Trim(name, "\r\n")
+	ch.lambdaTS = ch.lambdaTS + 1
 	//User joined Messsage
 	clientMessageBox := &chatserver.FromClient{
 		Name: ch.clientName,
-		Body: "joined Chitty-Chat at Lamport time L",
+		Body: fmt.Sprintf("%s%d", "joined Chitty-Chat at Lamport time ", +ch.lambdaTS),
 	}
 	err = ch.stream.Send(clientMessageBox)
 
@@ -88,11 +91,13 @@ func (ch *clienthandle) sendMessage(bl chan bool) {
 			log.Fatalf(" Failed to read from console :: %v", err)
 		}
 		clientMessage = strings.Trim(clientMessage, "\r\n")
+		ch.lambdaTS++
 		if clientMessage == "/leave" {
 			//User Left Message
 			clientMessageBox := &chatserver.FromClient{
-				Name: ch.clientName,
-				Body: "left Chitty-Chat at Lamport time L",
+				Name:      ch.clientName,
+				Body:      fmt.Sprintf("%s%d", "left Chitty-Chat at Lamport time ", +ch.lambdaTS),
+				Timestamp: ch.lambdaTS,
 			}
 			err = ch.stream.Send(clientMessageBox)
 			bl <- false
@@ -101,8 +106,9 @@ func (ch *clienthandle) sendMessage(bl chan bool) {
 		} else {
 
 			clientMessageBox := &chatserver.FromClient{
-				Name: ch.clientName,
-				Body: clientMessage,
+				Name:      ch.clientName,
+				Body:      fmt.Sprintf("%s%d%s", clientMessage+" (Timestamp: ", +ch.lambdaTS, ")"),
+				Timestamp: ch.lambdaTS,
 			}
 
 			err = ch.stream.Send(clientMessageBox)
@@ -121,7 +127,10 @@ func (ch *clienthandle) receiveMessage() {
 		if err != nil {
 			log.Printf("Error in receiving message from server :: %v", err)
 		}
-
+		if mssg.Timestamp > ch.lambdaTS {
+			ch.lambdaTS = mssg.Timestamp
+		}
+		ch.lambdaTS++
 		//print message to console
 		fmt.Printf("%s : %s \n", mssg.Name, mssg.Body)
 
