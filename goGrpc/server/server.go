@@ -18,7 +18,7 @@ func main() {
 		return
 	}
 
-	log.Print("setting up server...")
+	log.Print("Server is setup at port 5000.")
 
 	s := chatserver.Server{}
 
