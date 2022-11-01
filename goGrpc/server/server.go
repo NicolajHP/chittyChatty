@@ -29,6 +29,6 @@ func main() {
 	err = grpcServer.Serve(listener)
 
 	if err != nil {
-		log.Fatal("Failed to server gRPC server over port 5000")
+		log.Fatal("Failed to start gRPC Server")
 	}
 }
