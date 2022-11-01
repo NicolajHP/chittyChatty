@@ -61,7 +61,7 @@ func Publish(message string) {
 	_, err := client.Publish(context_, &chatserver.Message{User: name, Content: message, Lamport: lamport})
 
 	if err != nil {
-		log.Fatalf("Could not send the message.. Error: %s", err)
+		log.Fatalf("Error while sending message to server: %s", err)
 	}
 }
 
@@ -74,7 +74,7 @@ func main() {
 	conn, err := grpc.Dial(":5000", grpc.WithInsecure())
 
 	if err != nil {
-		log.Fatalf("Could not connect! %s", err)
+		log.Fatalf("Could not connect to server! %s", err)
 		return
 	}
 
