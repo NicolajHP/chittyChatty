@@ -18,13 +18,17 @@ var lamport int32 = 1
 var client chatserver.ServicesClient
 var context_ context.Context
 
-func Join() {
+func Join(quit chan bool) {
 	stream, _ := client.Join(context.Background(), &chatserver.JoinMessage{User: name})
 
 	for {
 		response, err := stream.Recv()
 
 		if err != nil {
+			break
+		}
+
+		if <-quit {
 			break
 		}
 
@@ -46,7 +50,7 @@ func MaxInt(a int32, b int32) int32 {
 	return b
 }
 
-func Publish(message string) {
+func Publish(message string, quit chan bool) {
 	if len(message) > 128 {
 		log.Print("Message is above the allowed 128 characters\n")
 		return
@@ -55,6 +59,10 @@ func Publish(message string) {
 	if len(message) == 0 {
 		log.Print("Message is empty")
 		return
+	}
+
+	if message == "/leave" {
+		quit <- true
 	}
 
 	atomic.AddInt32(&lamport, 1)
@@ -66,6 +74,7 @@ func Publish(message string) {
 }
 
 func main() {
+	quit := make(chan bool)
 	nameFlag := flag.String("name", "", "")
 	flag.Parse()
 	name = *nameFlag
@@ -83,10 +92,10 @@ func main() {
 	client = chatserver.NewServicesClient(conn)
 	context_ = context.Background()
 
-	go Join()
+	go Join(quit)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		go Publish(scanner.Text())
+		go Publish(scanner.Text(), quit)
 	}
 }
