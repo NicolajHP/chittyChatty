@@ -14,6 +14,9 @@ message JoinMessage {
     string user = 1;
 }
 
+message Empty {
+}
+
 service Services {
     rpc Broadcast (Message) returns (Empty);
     rpc Join (JoinMessage) returns (stream Message);

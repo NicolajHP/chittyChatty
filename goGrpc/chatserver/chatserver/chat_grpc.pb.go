@@ -22,7 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServicesClient interface {
-	ChatService(ctx context.Context, opts ...grpc.CallOption) (Services_ChatServiceClient, error)
+	Broadcast(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error)
+	Join(ctx context.Context, in *JoinMessage, opts ...grpc.CallOption) (Services_JoinClient, error)
+	Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type servicesClient struct {
@@ -33,50 +35,77 @@ func NewServicesClient(cc grpc.ClientConnInterface) ServicesClient {
 	return &servicesClient{cc}
 }
 
-func (c *servicesClient) ChatService(ctx context.Context, opts ...grpc.CallOption) (Services_ChatServiceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Services_ServiceDesc.Streams[0], "/chatserver.Services/ChatService", opts...)
+func (c *servicesClient) Broadcast(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/chatserver.Services/Broadcast", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &servicesChatServiceClient{stream}
+	return out, nil
+}
+
+func (c *servicesClient) Join(ctx context.Context, in *JoinMessage, opts ...grpc.CallOption) (Services_JoinClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Services_ServiceDesc.Streams[0], "/chatserver.Services/Join", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &servicesJoinClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
-type Services_ChatServiceClient interface {
-	Send(*FromClient) error
-	Recv() (*FromServer, error)
+type Services_JoinClient interface {
+	Recv() (*Message, error)
 	grpc.ClientStream
 }
 
-type servicesChatServiceClient struct {
+type servicesJoinClient struct {
 	grpc.ClientStream
 }
 
-func (x *servicesChatServiceClient) Send(m *FromClient) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *servicesChatServiceClient) Recv() (*FromServer, error) {
-	m := new(FromServer)
+func (x *servicesJoinClient) Recv() (*Message, error) {
+	m := new(Message)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
+func (c *servicesClient) Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/chatserver.Services/Publish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServicesServer is the server API for Services service.
 // All implementations should embed UnimplementedServicesServer
 // for forward compatibility
 type ServicesServer interface {
-	ChatService(Services_ChatServiceServer) error
+	Broadcast(context.Context, *Message) (*Empty, error)
+	Join(*JoinMessage, Services_JoinServer) error
+	Publish(context.Context, *Message) (*Empty, error)
 }
 
 // UnimplementedServicesServer should be embedded to have forward compatible implementations.
 type UnimplementedServicesServer struct {
 }
 
-func (UnimplementedServicesServer) ChatService(Services_ChatServiceServer) error {
-	return status.Errorf(codes.Unimplemented, "method ChatService not implemented")
+func (UnimplementedServicesServer) Broadcast(context.Context, *Message) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
+}
+func (UnimplementedServicesServer) Join(*JoinMessage, Services_JoinServer) error {
+	return status.Errorf(codes.Unimplemented, "method Join not implemented")
+}
+func (UnimplementedServicesServer) Publish(context.Context, *Message) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
 
 // UnsafeServicesServer may be embedded to opt out of forward compatibility for this service.
@@ -90,30 +119,61 @@ func RegisterServicesServer(s grpc.ServiceRegistrar, srv ServicesServer) {
 	s.RegisterService(&Services_ServiceDesc, srv)
 }
 
-func _Services_ChatService_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ServicesServer).ChatService(&servicesChatServiceServer{stream})
+func _Services_Broadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Message)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServicesServer).Broadcast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chatserver.Services/Broadcast",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).Broadcast(ctx, req.(*Message))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-type Services_ChatServiceServer interface {
-	Send(*FromServer) error
-	Recv() (*FromClient, error)
+func _Services_Join_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(JoinMessage)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ServicesServer).Join(m, &servicesJoinServer{stream})
+}
+
+type Services_JoinServer interface {
+	Send(*Message) error
 	grpc.ServerStream
 }
 
-type servicesChatServiceServer struct {
+type servicesJoinServer struct {
 	grpc.ServerStream
 }
 
-func (x *servicesChatServiceServer) Send(m *FromServer) error {
+func (x *servicesJoinServer) Send(m *Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *servicesChatServiceServer) Recv() (*FromClient, error) {
-	m := new(FromClient)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _Services_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Message)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(ServicesServer).Publish(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chatserver.Services/Publish",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).Publish(ctx, req.(*Message))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // Services_ServiceDesc is the grpc.ServiceDesc for Services service.
@@ -122,13 +182,21 @@ func (x *servicesChatServiceServer) Recv() (*FromClient, error) {
 var Services_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "chatserver.Services",
 	HandlerType: (*ServicesServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Broadcast",
+			Handler:    _Services_Broadcast_Handler,
+		},
+		{
+			MethodName: "Publish",
+			Handler:    _Services_Publish_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ChatService",
-			Handler:       _Services_ChatService_Handler,
+			StreamName:    "Join",
+			Handler:       _Services_Join_Handler,
 			ServerStreams: true,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "chat.proto",
