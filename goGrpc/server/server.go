@@ -1,38 +1,34 @@
 package main
 
 import (
-	"grpcChatServer/chatserver/chatserver"
+	"grpcChatServer/chatserver"
 	"log"
 	"net"
-	"os"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
+	log.Print("Loading...")
 
-	Port := os.Getenv("PORT")
-	if Port == "" {
-		Port = "5000" //default port set to 5000
-	}
+	listener, err := net.Listen("tcp", "localhost:5000")
 
-	listen, err := net.Listen("tcp", ":"+Port)
 	if err != nil {
-		log.Fatalf("Could not listen @ %v :: %v", Port, err)
+		log.Fatalf("TCP failed to listen... %s", err)
+		return
 	}
-	log.Print("Listening at: " + Port)
 
-	//Server instance
-	grpcserver := grpc.NewServer()
+	log.Print("setting up server...")
 
-	//Chatservice
-	cs := chatserver.ChatServer{}
-	chatserver.RegisterServicesServer(grpcserver, &cs)
+	s := chatserver.Server{}
 
-	//Fail to start grpc server
-	err = grpcserver.Serve(listen)
+	grpcServer := grpc.NewServer()
+
+	chatserver.RegisterServicesServer(grpcServer, &s)
+
+	err = grpcServer.Serve(listener)
+
 	if err != nil {
-		log.Fatalf("Failed to start gRPC Server :: %v", err)
+		log.Fatal("Failed to server gRPC server over port 5000")
 	}
-
 }
