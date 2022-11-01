@@ -29,6 +29,6 @@ func main() {
 	err = grpcServer.Serve(listener)
 
 	if err != nil {
-		log.Fatal("Failed to start gRPC Server")
+		log.Fatal("Failed to start gRPC Server :: %v", err)
 	}
 }
