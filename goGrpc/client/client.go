@@ -14,9 +14,9 @@ import (
 )
 
 var name string
-var client chatserver.ServicesClient
-var ctx context.Context
 var lamport int32 = 1
+var client chatserver.ServicesClient
+var context_ context.Context
 
 func Join() {
 	stream, _ := client.Join(context.Background(), &chatserver.JoinMessage{User: name})
@@ -58,7 +58,7 @@ func Publish(message string) {
 	}
 
 	atomic.AddInt32(&lamport, 1)
-	_, err := client.Publish(ctx, &chatserver.Message{User: name, Content: message, Lamport: lamport})
+	_, err := client.Publish(context_, &chatserver.Message{User: name, Content: message, Lamport: lamport})
 
 	if err != nil {
 		log.Fatalf("Could not send the message.. Error: %s", err)
@@ -66,13 +66,11 @@ func Publish(message string) {
 }
 
 func main() {
-	// Handle flags
 	nameFlag := flag.String("name", "", "")
-
 	flag.Parse()
 	name = *nameFlag
 
-	// Handle connection
+	// Connect to server
 	conn, err := grpc.Dial(":5000", grpc.WithInsecure())
 
 	if err != nil {
@@ -83,7 +81,7 @@ func main() {
 	defer conn.Close()
 
 	client = chatserver.NewServicesClient(conn)
-	ctx = context.Background()
+	context_ = context.Background()
 
 	go Join()
 
