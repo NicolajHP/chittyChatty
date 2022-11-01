@@ -22,15 +22,15 @@ func Join(quit chan bool) {
 	stream, _ := client.Join(context.Background(), &chatserver.JoinMessage{User: name})
 
 	for {
-		response, err := stream.Recv()
-
-		if err != nil {
+		select {
+		case <-quit:
 			break
-		}
+		default:
+			response, err := stream.Recv()
 
-		if <-quit {
-			break
-		} else {
+			if err != nil {
+				break
+			}
 
 			atomic.StoreInt32(&lamport, MaxInt(lamport, response.Lamport)+1)
 
