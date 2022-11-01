@@ -63,7 +63,7 @@ func Publish(message string, quit chan bool) {
 	}
 
 	if message == "/leave" {
-		quit <- true
+		quit <- false
 	}
 
 	atomic.AddInt32(&lamport, 1)
@@ -96,6 +96,9 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		go Publish(scanner.Text(), quit)
+		if scanner.Text() == "/leave" {
+			break
+		}
 	}
 
 	defer conn.Close()
