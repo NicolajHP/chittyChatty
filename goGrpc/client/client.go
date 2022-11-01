@@ -75,10 +75,10 @@ func Publish(message string, quit chan bool) {
 }
 
 func main() {
-	quit := make(chan bool)
 	nameFlag := flag.String("name", "", "")
 	flag.Parse()
 	name = *nameFlag
+	quit := make(chan bool)
 
 	// Connect to server
 	conn, err := grpc.Dial(":5000", grpc.WithInsecure())
