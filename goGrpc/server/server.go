@@ -14,7 +14,7 @@ func main() {
 	listener, err := net.Listen("tcp", "localhost:5000")
 
 	if err != nil {
-		log.Fatalf("TCP failed to listen... %s", err)
+		log.Fatalf("Could not listen @ %s", err)
 		return
 	}
 
