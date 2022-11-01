@@ -37,7 +37,7 @@ func (s *Server) Join(message *JoinMessage, stream Services_JoinServer) error {
 
 	msg := Message{
 		User:    "",
-		Content: "Participant " + message.User + " joined Chitty-Chat at Lamport time " + strconv.Itoa(int(lamport)),
+		Content: "User " + message.User + " joined Chitty-Chat at Lamport time " + strconv.Itoa(int(lamport)),
 		Lamport: lamport,
 	}
 
@@ -48,7 +48,7 @@ func (s *Server) Join(message *JoinMessage, stream Services_JoinServer) error {
 		case <-stream.Context().Done():
 			msg := Message{
 				User:    "",
-				Content: "Participant " + message.User + " left Chitty-Chat at Lamport time " + strconv.Itoa(int(lamport)),
+				Content: "User " + message.User + " left Chitty-Chat at Lamport time " + strconv.Itoa(int(lamport)),
 				Lamport: lamport,
 			}
 			for i, element := range clients {
